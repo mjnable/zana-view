@@ -144,19 +144,26 @@ final class PhpTemplate
 
     /**
      * View helpers by name; the result is escaped unless the helper is safe.
+     * Arrays come back with their strings escaped, like context values.
      *
      * @param list<mixed> $arguments
+     * @return string|array<array-key, mixed>
      */
-    public function __call(string $name, array $arguments): string
+    public function __call(string $name, array $arguments): string|array
     {
         $result = $this->helpers->call($name, $arguments);
 
-        return $this->helpers->isSafe($name) && (is_string($result) || $result instanceof \Stringable) ? (string) $result : $this->e($result);
+        return match (true) {
+            is_array($result) => self::escapeAll($result),
+            $this->helpers->isSafe($name) && (is_string($result) || $result instanceof \Stringable) => (string) $result,
+            default => $this->e($result),
+        };
     }
 
     /**
-     * @param array<string, mixed> $values
-     * @return array<string, mixed>
+     * @template K of array-key
+     * @param array<K, mixed> $values
+     * @return array<K, mixed>
      */
     private static function escapeAll(array $values): array
     {

@@ -182,6 +182,14 @@ final class ViewTest extends TestCase
         $engine->render('nope', []);
     }
 
+    public function testHelpersReturningArraysHaveTheirStringsEscaped(): void
+    {
+        $helpers = (new ViewHelpers())->add('links', static fn (): array => ['en' => '/en?a=1&b=2', 'fr' => '<x>']);
+        $engine = new PhpEngine((new TemplatePaths())->add(__DIR__ . '/app/templates'), $helpers);
+
+        $this->assertSame('en=/en?a=1&amp;b=2;fr=&lt;x&gt;;', $engine->render('links', []));
+    }
+
     public function testFailuresInsideTemplatesCleanTheirOutputBuffers(): void
     {
         $engine = new PhpEngine((new TemplatePaths())->add(__DIR__ . '/app/templates'), new ViewHelpers());

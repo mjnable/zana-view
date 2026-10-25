@@ -40,6 +40,10 @@ public function show(): View
   escaped before the template sees them. Wrap trusted HTML in `Markup`.
   Objects are not escaped: print them with `$this->e($object)`.
   `$this->raw('name')` gives a value unescaped.
+- **Passing values on.** Values a template passes to `layout()` or
+  `insert()` are printed as given, since template variables and helper
+  output are already escaped. Give helpers `$this->raw('name')` when they
+  need the original text.
 - **Layouts and sections.** `layout()`, `start()`/`stop()` and `section()`;
   `insert()` renders a partial with the current context.
 - **Helpers.**

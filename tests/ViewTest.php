@@ -182,6 +182,14 @@ final class ViewTest extends TestCase
         $engine->render('nope', []);
     }
 
+    public function testValuesPassedToLayoutsAndPartialsAreEscapedOnce(): void
+    {
+        $helpers = (new ViewHelpers())->add('upper', static fn (string $text): string => strtoupper($text));
+        $engine = new PhpEngine((new TemplatePaths())->add(__DIR__ . '/app/templates'), $helpers);
+
+        $this->assertSame("<h1>Tom &amp; Jerry</h1><h2>TOM &amp; JERRY</h2><p>Tom &amp; Jerry</p>\n", $engine->render('passes', ['name' => 'Tom & Jerry']));
+    }
+
     public function testHelpersReturningArraysHaveTheirStringsEscaped(): void
     {
         $helpers = (new ViewHelpers())->add('links', static fn (): array => ['en' => '/en?a=1&b=2', 'fr' => '<x>']);

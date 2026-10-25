@@ -26,8 +26,10 @@ final class PhpTemplate
     private array $open = [];
 
     /**
-     * @param array<string, mixed> $context Unescaped
+     * @param array<string, mixed> $context Unescaped: from the caller, escaped before the template sees it
      * @param array<string, string> $sections Sections given by a child template
+     * @param array<string, mixed> $trusted Passed by a template to layout() or insert(): already
+     *                                      escaped (template variables, helper output), so printed as given
      */
     public function __construct(
         private readonly PhpEngine $engine,
@@ -35,6 +37,7 @@ final class PhpTemplate
         private readonly string $template,
         private readonly array $context,
         array $sections = [],
+        private readonly array $trusted = [],
     ) {
         $this->sections = $sections;
     }
@@ -48,7 +51,7 @@ final class PhpTemplate
             (function (string $__file, array $__variables): void {
                 extract($__variables, EXTR_SKIP);
                 include $__file;
-            })->call($this, $file, self::escapeAll($this->context));
+            })->call($this, $file, [...self::escapeAll($this->context), ...$this->trusted]);
             if ($this->open !== []) {
                 throw new ViewException("Template {$this->template}: section \"{$this->open[0]}\" is not closed with stop().");
             }
@@ -68,7 +71,7 @@ final class PhpTemplate
         $sections = $this->sections;
         $sections['content'] ??= $output;
 
-        return (new self($this->engine, $this->helpers, $layout, [...$this->context, ...$extra], $sections))->render();
+        return (new self($this->engine, $this->helpers, $layout, $this->context, $sections, [...$this->trusted, ...$extra]))->render();
     }
 
     /**
@@ -94,14 +97,15 @@ final class PhpTemplate
      */
     public function raw(string $name): mixed
     {
-        return $this->context[$name] ?? null;
+        return $this->context[$name] ?? $this->trusted[$name] ?? null;
     }
 
     /**
      * Render this template inside a layout; its output becomes the layout's
      * "content" section.
      *
-     * @param array<string, mixed> $context Added to the layout's context
+     * @param array<string, mixed> $context Added to the layout's context, printed as given:
+     *                                      template variables and helper output are already escaped
      */
     public function layout(string $template, array $context = []): void
     {
@@ -133,13 +137,14 @@ final class PhpTemplate
     }
 
     /**
-     * Render a partial with this template's context plus $context.
+     * Render a partial with this template's context plus $context, which is
+     * printed as given, like layout()'s.
      *
      * @param array<string, mixed> $context
      */
     public function insert(string $template, array $context = []): string
     {
-        return (new self($this->engine, $this->helpers, $template, [...$this->context, ...$context]))->render();
+        return (new self($this->engine, $this->helpers, $template, $this->context, [], [...$this->trusted, ...$context]))->render();
     }
 
     /**

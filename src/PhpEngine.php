@@ -11,9 +11,11 @@ use Zana\View\Internal\PhpTemplate;
  *
  * Context strings, and strings inside arrays, are escaped before the
  * template sees them; Markup, numbers, booleans and null pass unchanged, and
- * objects must be escaped by the template with $this->e(). Inside a
- * template, $this offers e(), raw(), layout(), start()/stop(), section(),
- * insert(), and every view helper by name.
+ * objects must be escaped by the template with $this->e(). Values a template
+ * passes to layout() or insert() are printed as given, as template variables
+ * and helper output are already escaped; pass $this->raw('name') to a helper
+ * that needs the original text. Inside a template, $this offers e(), raw(),
+ * layout(), start()/stop(), section(), insert(), and every view helper by name.
  *
  *     <?php $this->layout('layouts/site', ['title' => 'About']) ?>
  *     <h1><?= $title ?></h1>

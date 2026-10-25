@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Zana\View;
 
+use Psr\Http\Message\ServerRequestInterface;
 use Zana\Configuration\ConfigurationInterface;
 use Zana\Container\Contracts\ContainerInterface;
 use Zana\Container\Contracts\ServiceCollectionInterface;
@@ -12,10 +13,14 @@ use Zana\Core\ApplicationInterface;
 use Zana\Core\ServiceProvider;
 use Zana\Http\ErrorRendererInterface;
 use Zana\Http\RequestContext;
+use Zana\Http\ResponseFactory;
 use Zana\Routing\ResultConverterInterface;
+use Zana\Routing\Router;
+use Zana\Routing\UrlDefaults;
 use Zana\Routing\UrlGenerator;
 use Zana\Security\CsrfTokens;
 use Zana\Translation\LocaleContext;
+use Zana\Translation\LocaleMiddleware;
 use Zana\Translation\TranslatorInterface;
 
 /**
@@ -46,8 +51,22 @@ final class ViewServiceProvider extends ServiceProvider
                 if (interface_exists(TranslatorInterface::class) && $r->has(TranslatorInterface::class)) {
                     $translator = $r->get(TranslatorInterface::class);
                     $locale = $r->get(LocaleContext::class);
-                    assert($translator instanceof TranslatorInterface && $locale instanceof LocaleContext);
-                    $helpers->add('t', $translator->translate(...))->addGlobal('locale', $locale->get(...));
+                    $router = $r->get(Router::class);
+                    $defaults = $r->get(UrlDefaults::class);
+                    assert($translator instanceof TranslatorInterface && $locale instanceof LocaleContext && $router instanceof Router && $defaults instanceof UrlDefaults);
+
+                    $helpers
+                        ->add('t', $translator->translate(...))
+                        ->addGlobal('locale', $locale->get(...))
+                        // Localised names default to the current locale, also on pages
+                        // that are not localised routes, such as error pages.
+                        ->add('url', static fn (string $name, array $parameters = [], array $query = []): string => $urls->generate(
+                            $name,
+                            $router->localizedVariants($name) !== null && !isset($parameters['_locale']) && !isset($defaults->all()['_locale'])
+                                ? [...$parameters, '_locale' => $locale->get()]
+                                : $parameters,
+                            $query,
+                        ));
                 }
 
                 if (class_exists(CsrfTokens::class) && $r->has(CsrfTokens::class)) {
@@ -80,7 +99,21 @@ final class ViewServiceProvider extends ServiceProvider
             ->tag(ResultConverterInterface::TAG, ViewResultConverter::class);
 
         if (!$services->has(ErrorRendererInterface::class)) {
-            $services->scoped(ErrorRendererInterface::class, ViewErrorRenderer::class);
+            $services->scoped(ErrorRendererInterface::class, static function (ServiceResolverInterface $r): ViewErrorRenderer {
+                $views = $r->get(ViewRendererInterface::class);
+                $responses = $r->get(ResponseFactory::class);
+                assert($views instanceof ViewRendererInterface && $responses instanceof ResponseFactory);
+
+                $inLocale = null;
+                if (class_exists(LocaleMiddleware::class) && $r->has(LocaleMiddleware::class)) {
+                    $locales = $r->get(LocaleMiddleware::class);
+                    $context = $r->get(LocaleContext::class);
+                    assert($locales instanceof LocaleMiddleware && $context instanceof LocaleContext);
+                    $inLocale = static fn (ServerRequestInterface $request, \Closure $render): string => $context->run($locales->detect($request)[0], $render);
+                }
+
+                return new ViewErrorRenderer($views, $responses, $inLocale);
+            });
         }
     }
 

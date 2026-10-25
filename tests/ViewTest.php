@@ -130,6 +130,14 @@ final class ViewTest extends TestCase
         $this->assertStringContainsString('<p class="error">404: This page has moved &lt;away&gt;.</p>', $html);
     }
 
+    public function testErrorPagesRenderInTheRequestLocale(): void
+    {
+        $html = (string) $this->get('/fr/nulle-part')->getBody();
+
+        $this->assertStringContainsString('<html lang="fr">', $html);
+        $this->assertStringContainsString('<nav><a href="/fr">Accueil</a></nav>', $html);
+    }
+
     public function testStatusesWithoutTemplatesFallBackToTheBuiltInPage(): void
     {
         $response = $this->kernel->handle(new ServerRequest('DELETE', '/en/about', ['Accept' => 'text/html']));

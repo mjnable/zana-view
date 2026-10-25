@@ -1,0 +1,53 @@
+{
+    "name": "mj-zana/view",
+    "description": "HTML views for Zana applications: templates per module, layouts, escaping by default, View route results and error pages",
+    "type": "library",
+    "keywords": ["zana", "view", "templates", "html", "layout"],
+    "license": "MIT",
+    "require": {
+        "php": "^8.5",
+        "mj-zana/core": "^2.1",
+        "mj-zana/http": "^2.1",
+        "mj-zana/routing": "^2.1"
+    },
+    "require-dev": {
+        "mj-zana/security": "^2.1",
+        "mj-zana/translation": "^2.1",
+        "phpstan/phpstan": "^2.1",
+        "phpunit/phpunit": "^11.5"
+    },
+    "suggest": {
+        "mj-zana/translation": "For the t() helper and the locale global",
+        "mj-zana/security": "For the csrf_token() and csrf_field() helpers",
+        "mj-zana/view-twig": "To write templates in Twig"
+    },
+    "autoload": {
+        "psr-4": {
+            "Zana\\View\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Zana\\View\\Tests\\": "tests/"
+        }
+    },
+    "repositories": [
+        { "type": "path", "url": "../zana-container", "options": { "symlink": true, "versions": { "mj-zana/container": "2.1.0" } } },
+        { "type": "path", "url": "../zana-configuration", "options": { "symlink": true, "versions": { "mj-zana/configuration": "2.1.0" } } },
+        { "type": "path", "url": "../zana-core", "options": { "symlink": true, "versions": { "mj-zana/core": "2.1.0" } } },
+        { "type": "path", "url": "../zana-http", "options": { "symlink": true, "versions": { "mj-zana/http": "2.1.0" } } },
+        { "type": "path", "url": "../zana-routing", "options": { "symlink": true, "versions": { "mj-zana/routing": "2.1.0" } } },
+        { "type": "path", "url": "../zana-security", "options": { "symlink": true, "versions": { "mj-zana/security": "2.1.0" } } },
+        { "type": "path", "url": "../zana-translation", "options": { "symlink": true, "versions": { "mj-zana/translation": "2.1.0" } } },
+        { "type": "path", "url": "../zana-validation", "options": { "symlink": true, "versions": { "mj-zana/validation": "2.1.0" } } }
+    ],
+    "scripts": {
+        "test": "phpunit",
+        "analyse": "phpstan analyse --memory-limit=1G"
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

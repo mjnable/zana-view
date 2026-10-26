@@ -9,9 +9,10 @@ use Zana\Http\SecurityHeadersMiddleware;
 
 /**
  * Renders templates with the engine, adding the globals: view.globals,
- * ViewHelpers globals, and "csp_nonce" (the request's Content-Security-Policy
- * nonce, when SecurityHeadersMiddleware generated one). Context values
- * override globals. Registered scoped, as it reads the current request.
+ * ViewHelpers globals, "csp_nonce" (the request's Content-Security-Policy
+ * nonce, when SecurityHeadersMiddleware generated one) and "meta" (the
+ * PageMeta tags). Context values override globals. Registered scoped, as it
+ * reads the current request.
  */
 final readonly class ViewRenderer implements ViewRendererInterface
 {
@@ -23,6 +24,7 @@ final readonly class ViewRenderer implements ViewRendererInterface
         private ViewHelpers $helpers,
         private array $globals = [],
         private ?RequestContext $request = null,
+        private ?PageMeta $meta = null,
     ) {
     }
 
@@ -34,6 +36,7 @@ final readonly class ViewRenderer implements ViewRendererInterface
             ...$this->globals,
             ...$this->helpers->globals(),
             'csp_nonce' => is_string($nonce) ? $nonce : null,
+            'meta' => $this->meta?->tags() ?? new Markup(''),
             ...$context,
         ]);
     }

@@ -106,7 +106,7 @@ final class ViewServiceProvider extends ServiceProvider
                 }
 
                 return $helpers;
-            })
+            })->uses(UrlGenerator::class, TranslatorInterface::class, LocaleContext::class, Router::class, UrlDefaults::class, CsrfTokens::class, Assets::class, Picture::class)
             ->singleton(Assets::class, static function (ServiceResolverInterface $r): Assets {
                 $config = $r->get(ConfigurationInterface::class);
                 $application = $r->get(ApplicationInterface::class);
@@ -120,7 +120,7 @@ final class ViewServiceProvider extends ServiceProvider
                     $strategy,
                     $config->has('view.assets.manifest') ? $config->string('view.assets.manifest') : null,
                 );
-            })
+            })->uses(ConfigurationInterface::class, ApplicationInterface::class)
             ->scoped(PageMeta::class, static function (ServiceResolverInterface $r): PageMeta {
                 $config = $r->get(ConfigurationInterface::class);
                 $context = class_exists(LocaleContext::class) && $r->has(LocaleContext::class) ? $r->get(LocaleContext::class) : null;
@@ -130,7 +130,7 @@ final class ViewServiceProvider extends ServiceProvider
                     $config->has('app.name') ? $config->string('app.name') : null,
                     $context instanceof LocaleContext ? $context->get(...) : null,
                 );
-            })
+            })->uses(ConfigurationInterface::class, LocaleContext::class)
             ->trySingleton(EngineInterface::class, PhpEngine::class)
             ->scoped(ViewRenderer::class, static function (ServiceResolverInterface $r): ViewRenderer {
                 $engine = $r->get(EngineInterface::class);
@@ -140,7 +140,7 @@ final class ViewServiceProvider extends ServiceProvider
                 assert($engine instanceof EngineInterface && $helpers instanceof ViewHelpers && $request instanceof RequestContext && $meta instanceof PageMeta);
 
                 return new ViewRenderer($engine, $helpers, $r->get(ConfigurationInterface::class)->array('view.globals', []), $request, $meta);
-            })
+            })->uses(EngineInterface::class, ViewHelpers::class, RequestContext::class, PageMeta::class, ConfigurationInterface::class)
             ->alias(ViewRendererInterface::class, ViewRenderer::class)
             ->scoped(ViewResultConverter::class)
             ->tag(ResultConverterInterface::TAG, ViewResultConverter::class);
@@ -160,7 +160,7 @@ final class ViewServiceProvider extends ServiceProvider
                 }
 
                 return new ViewErrorRenderer($views, $responses, $inLocale);
-            });
+            })->uses(ViewRendererInterface::class, ResponseFactory::class, LocaleMiddleware::class, LocaleContext::class);
         }
     }
 
